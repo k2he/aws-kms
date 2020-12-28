@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Slf4j
-@Service
+//@Service
 public class KmsServiceSTS2 {
     final static String keyArn = "arn:aws:kms:us-east-2:779352748365:key/4cefe317-592f-4bd1-a5fe-d081640209f9";
     final static String roleArn = "arn:aws:iam::779352748365:role/kai-test-ec2";
