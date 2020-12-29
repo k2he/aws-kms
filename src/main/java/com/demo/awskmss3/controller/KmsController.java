@@ -1,12 +1,18 @@
 package com.demo.awskmss3.controller;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demo.awskmss3.service.KmsCryptoImpl;
+import com.demo.awskmss3.domain.Patient;
+import com.demo.awskmss3.dto.PatientDto;
+import com.demo.awskmss3.service.PatientService;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -20,28 +26,40 @@ public class KmsController {
 
 	private static final byte[] EXAMPLE_DATA = "Hello World 11".getBytes(StandardCharsets.UTF_8);
 
-//    @NonNull
 //    private final KmsService kmsService;
 
 //    @NonNull
 //    private final KmsServiceSTS kmsServiceSTS;
     
     @NonNull
-    private final KmsCryptoImpl kmsCryptoImpl;
+    private final PatientService patientService;
     
-    @RequestMapping(value = "/encrypt", method = RequestMethod.GET)
-    public String encrypt() {
+    @PostMapping(value = "/encryptAndSave")
+    public Patient encrypt(@RequestBody PatientDto patientDto) {
 
-    	kmsCryptoImpl.encrypt(EXAMPLE_DATA);
+    	Patient patient = Patient.builder()
+    			.name(patientDto.getName())
+    			.medicalRecordNumber(patientDto.getMedicalRecordNumber())
+    			.ethnicity(patientDto.getEthnicity())
+    			.dateOfBirth(patientDto.getDateOfBirth())
+    			.sex(patientDto.getSex())
+    			.build();
     	
-        return "Finished";
+    	Patient patientResult = patientService.save(patient);
+    	
+    	return patientResult;
+    	
     }
     
-    @RequestMapping(value = "/decrypt", method = RequestMethod.GET)
-    public String decrypt() {
-
-    	kmsCryptoImpl.encrypt(EXAMPLE_DATA);
+    @GetMapping(value = "/patients/{patientId}")
+    public Patient getPatientById(@PathVariable("patientId") Long patientId) {
+    	Patient patient = patientService.getPatientById(patientId);
     	
-        return "Finished";
+    	return patient;
+    }
+    
+    @GetMapping(value = "/patients")
+    public List<Patient> getAllPatient() {
+    	return patientService.getAllPatients();
     }
 }
