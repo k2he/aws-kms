@@ -23,15 +23,7 @@ public class PatientService {
 	public Patient save(Patient patient) {
 		Patient savedPatient = patientRepo.encryptAndSave(patient);
 		return savedPatient;
-//		byte[] addressByte = patient.getAddress().getBytes(StandardCharsets.UTF_8);
-//		byte[] encryptedAddress = kmsCryptoImpl2.encrypt(addressByte);
-//		
-//		String addressString = new String(encryptedAddress, StandardCharsets.UTF_8);
-//		
-//		patient.setAddress(addressString);
-//    	return patientRepo.save(patient);
 	}
-	
 	
 	public Patient getPatientById(Long id) {
 		Patient patient = patientRepo.findById(id).get();

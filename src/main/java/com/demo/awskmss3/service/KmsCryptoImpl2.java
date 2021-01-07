@@ -26,8 +26,6 @@ public class KmsCryptoImpl2 implements Crypto {
 	final static String keyArn = "arn:aws:kms:us-east-2:779352748365:key/4cefe317-592f-4bd1-a5fe-d081640209f9";
 	final static String roleArn = "arn:aws:iam::779352748365:role/kai-test-ec2";
 
-	private static final byte[] EXAMPLE_DATA = "Hello World 11".getBytes(StandardCharsets.UTF_8);
-
 	private static final String ROLE_SESSION_NAME = "demo-runner";
 
 	public KmsClient kmsClient;
@@ -69,11 +67,6 @@ public class KmsCryptoImpl2 implements Crypto {
         String s = new String(byteResponse, StandardCharsets.UTF_8);
         System.out.println("Decryption Text: " + s);
         return byteResponse;
-//		
-//		final AwsSessionCredentials sessionCredentials = kmsSessionCredentials();
-//		final KmsMasterKeyProvider masterKeyProvider = KmsMasterKeyProvider.builder()
-//				.withCredentials(sessionCredentials).withKeysForEncryption(kmsCustomerMasterKey()).build();
-//		return crypto.decryptData(masterKeyProvider, cipherBytes).getResult();
 	}
 
 	@Override
