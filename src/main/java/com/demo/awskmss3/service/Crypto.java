@@ -3,8 +3,8 @@ package com.demo.awskmss3.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Base64;
 
-import com.amazonaws.util.Base64;
 import com.demo.awskmss3.exception.EncryptionException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +39,7 @@ public interface Crypto {
    * @return a Base64 encoded string of the encrypted bytes
    */
   default String encryptSerialized(@NonNull final byte[] toEncrypt) {
-    return Base64.encodeAsString(encrypt(toEncrypt));
+    return Base64.getEncoder().encodeToString(encrypt(toEncrypt));
   }
 
   /**
@@ -103,7 +103,7 @@ public interface Crypto {
    * @return a byte[] representing the serialized form of decrypted object.
    */
   default byte[] decryptBase64(final String cipherText) {
-    return decrypt(Base64.decode(cipherText));
+    return decrypt(Base64.getDecoder().decode(cipherText));
   }
 
   /**

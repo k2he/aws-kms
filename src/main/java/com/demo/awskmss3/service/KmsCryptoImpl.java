@@ -4,62 +4,47 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.encryptionsdk.AwsCrypto;
-import com.amazonaws.encryptionsdk.CommitmentPolicy;
-import com.amazonaws.encryptionsdk.CryptoResult;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKey;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
-
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
 
-//@Service
+@Service
 public class KmsCryptoImpl implements Crypto {
 
 	final static String keyArn = "arn:aws:kms:us-east-2:779352748365:key/4cefe317-592f-4bd1-a5fe-d081640209f9";
 	final static String roleArn = "arn:aws:iam::779352748365:role/kai-test-ec2";
 
-	private static final byte[] EXAMPLE_DATA = "Hello World 11".getBytes(StandardCharsets.UTF_8);
-
 	private static final String ROLE_SESSION_NAME = "demo-runner";
 
+	public KmsClient kmsClient;
+	
+	
 	@Override
 	public byte[] encrypt(final byte[] toEncrypt) {
-//		KmsClient kmsClient = KmsClient.builder()
-//				.credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
-//				.build();
-//
-//		SdkBytes blob = SdkBytes.fromByteArray(EXAMPLE_DATA);
-//		EncryptRequest encryptRequest = EncryptRequest.builder().keyId(keyArn).plaintext(blob).build();
-//
-//		EncryptResponse resp = kmsClient.encrypt(encryptRequest);
-//		System.out.println("Encryption Text: " + resp.ciphertextBlob());
-
-		final AwsCrypto crypto = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.RequireEncryptRequireDecrypt)
+		KmsClient kmsClient = KmsClient.builder()
+				.credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
 				.build();
-		final KmsMasterKeyProvider keyProvider = KmsMasterKeyProvider.builder().buildStrict(keyArn);
 
-		final Map<String, String> encryptionContext = Collections.singletonMap("ExampleContextKey",
-				"ExampleContextValue");
+		SdkBytes blob = SdkBytes.fromByteArray(toEncrypt);
+		EncryptRequest encryptRequest = EncryptRequest.builder().keyId(keyArn).plaintext(blob).build();
 
-		// 4. Encrypt the data
-		final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(keyProvider, EXAMPLE_DATA,
-				encryptionContext);
-		final byte[] ciphertext = encryptResult.getResult();
+		EncryptResponse resp = kmsClient.encrypt(encryptRequest);
+		System.out.println("Encryption Text: " + resp.ciphertextBlob());
 
-		String output = new String(encryptResult.getResult(), StandardCharsets.UTF_8);
-        System.out.println("encryptResult: " + output);
-        
-        decrypt(ciphertext);
-		return ciphertext;
+		SdkBytes byteResult = resp.ciphertextBlob();
+		return byteResult.asByteArray();
 	}
 
 	@Override
@@ -69,23 +54,19 @@ public class KmsCryptoImpl implements Crypto {
 
 	@Override
 	public byte[] decrypt(final byte[] cipherBytes) {
-		final AwsCrypto crypto = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.RequireEncryptRequireDecrypt)
+		KmsClient kmsClient = KmsClient.builder()
+				.credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
 				.build();
-		final KmsMasterKeyProvider keyProvider = KmsMasterKeyProvider.builder().buildStrict(keyArn);
+		
+		SdkBytes blob = SdkBytes.fromByteArray(cipherBytes);
+		
+		DecryptRequest decryptRequest = DecryptRequest.builder().ciphertextBlob(blob).build();
+        DecryptResponse decryptResponse = kmsClient.decrypt(decryptRequest);
 
-		final Map<String, String> encryptionContext = Collections.singletonMap("ExampleContextKey",
-				"ExampleContextValue");
-		// 5. Decrypt the data
-        final CryptoResult<byte[], KmsMasterKey> decryptResult = crypto.decryptData(keyProvider, cipherBytes);
-
-        String output = new String(decryptResult.getResult(), StandardCharsets.UTF_8);
-        System.out.println("decryptResult: " + output);
-        return decryptResult.getResult();
-//		
-//		final AwsSessionCredentials sessionCredentials = kmsSessionCredentials();
-//		final KmsMasterKeyProvider masterKeyProvider = KmsMasterKeyProvider.builder()
-//				.withCredentials(sessionCredentials).withKeysForEncryption(kmsCustomerMasterKey()).build();
-//		return crypto.decryptData(masterKeyProvider, cipherBytes).getResult();
+        var byteResponse = decryptResponse.plaintext().asByteArray();
+        String s = new String(byteResponse, StandardCharsets.UTF_8);
+        System.out.println("Decryption Text: " + s);
+        return byteResponse;
 	}
 
 	@Override
