@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>11</java.version>
-		<aws.java.sdk.version>2.15.15</aws.java.sdk.version>
+		<aws.java.sdk.version>2.13.7</aws.java.sdk.version>
 	</properties>
 
 	<dependencyManagement>
@@ -25,7 +25,7 @@
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
-				<version>${aws.java.sdk.version}</version>
+				<version>2.15.15</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -33,6 +33,29 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<!-- Below is for AwsCrypto -->
+		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-core</artifactId>
+			<version>1.8.10.2</version>
+		</dependency>
+
+		<!-- Below is for AwsCrypto -->
+		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-kms -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-kms</artifactId>
+			<version>1.11.926</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-core</artifactId>
+			<version>1.11.926</version>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
