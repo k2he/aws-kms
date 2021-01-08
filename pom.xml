@@ -17,7 +17,9 @@
 
 	<properties>
 		<java.version>11</java.version>
-		<aws.java.sdk.version>2.13.7</aws.java.sdk.version>
+		<aws.java.sdk.version>2.15.15</aws.java.sdk.version>
+		<aws.java.sdk.kms.version>1.11.933</aws.java.sdk.kms.version>
+		<aws.encryption.sdk.java.version>2.0.0</aws.encryption.sdk.java.version>
 	</properties>
 
 	<dependencyManagement>
@@ -25,7 +27,7 @@
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
-				<version>2.15.15</version>
+				<version>${aws.java.sdk.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -33,48 +35,32 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Below is for AwsCrypto -->
-		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-core</artifactId>
-			<version>1.8.10.2</version>
+			<artifactId>aws-encryption-sdk-java</artifactId>
+			<version>${aws.encryption.sdk.java.version}</version>
 		</dependency>
 
-		<!-- Below is for AwsCrypto -->
-		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-kms -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-kms</artifactId>
-			<version>1.11.926</version>
+			<version>${aws.java.sdk.kms.version}</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
 		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-core</artifactId>
-			<version>1.11.926</version>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sts</artifactId>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>utils</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
 			<version>5.4.2</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>kms</artifactId>
-		</dependency>
-		<dependency>
-			<artifactId>auth</artifactId>
-			<groupId>software.amazon.awssdk</groupId>
-		</dependency>
-		<dependency>
-			<artifactId>aws-core</artifactId>
-			<groupId>software.amazon.awssdk</groupId>
 		</dependency>
 
 		<dependency>
@@ -101,20 +87,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-encryption-sdk-java</artifactId>
-			<version>2.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>s3</artifactId>
-		</dependency>
 
-		<dependency>
-			<artifactId>sts</artifactId>
-			<groupId>software.amazon.awssdk</groupId>
-		</dependency>
 	</dependencies>
 
 	<build>

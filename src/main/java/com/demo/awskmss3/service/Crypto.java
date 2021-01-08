@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.amazonaws.util.Base64;
 import com.demo.awskmss3.exception.EncryptionException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.NonNull;
+import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
  * Interface for cryptography implementation.
@@ -39,7 +39,7 @@ public interface Crypto {
    * @return a Base64 encoded string of the encrypted bytes
    */
   default String encryptSerialized(@NonNull final byte[] toEncrypt) {
-    return Base64.encodeAsString(encrypt(toEncrypt));
+    return BinaryUtils.toBase64(encrypt(toEncrypt));
   }
 
   /**
@@ -103,7 +103,7 @@ public interface Crypto {
    * @return a byte[] representing the serialized form of decrypted object.
    */
   default byte[] decryptBase64(final String cipherText) {
-    return decrypt(Base64.decode(cipherText));
+    return decrypt(BinaryUtils.fromBase64(cipherText));
   }
 
   /**
