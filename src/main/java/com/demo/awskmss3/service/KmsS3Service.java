@@ -1,12 +1,20 @@
 package com.demo.awskmss3.service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
+
+import com.amazonaws.AmazonServiceException;
 
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -14,8 +22,12 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
@@ -28,8 +40,10 @@ public class KmsS3Service {
 
     private static final String ROLE_SESSION_NAME = "demo-s3-runner";
     private static final String fileName = "observation.json";
-    
-    S3Client s3Client;
+    private static final String saveToFile ="downloaded.json";
+
+    private final S3Client s3Client;
+
 //    Regions clientRegion = Regions.DEFAULT_REGION;
 //    String bucketName = "kai-tester-bucket";
 //    String stringObjKeyName = "*** String object key name ***";
@@ -38,7 +52,7 @@ public class KmsS3Service {
 //    
 //    public boolean uploadToS3() {
 //    	
-//        PutObjectRequest putRequest = new PutObjectRequest(bucketName,
+//        PutObjectRequest putRequest = new PutObjectRequest(bucketName,fileName
 //                keyName, file).withSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams());
 //        
 //        try {
@@ -68,8 +82,7 @@ public class KmsS3Service {
 //            e.printStackTrace();
 //        }
 //    }
-    
-    
+
 //    /**
 //     * This client is useful when dealing with encrypted data.
 //     *
@@ -97,12 +110,14 @@ public class KmsS3Service {
 //          .withClientConfiguration(new ClientConfiguration().withMaxConnections(S3_MAX_CONNECTIONS))
 //          .build();
 //    }
-    
+
+    public KmsS3Service() {
+        this.s3Client = S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
+                .build();
+    }
+
     public Bucket getBucket(String bucket_name) {
-        s3Client = S3Client.builder()
-				.credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
-				.build();
-        
         ListBucketsResponse listBucketsResponse = s3Client.listBuckets();
         List<Bucket> buckets = listBucketsResponse.buckets();
         for (Bucket b : buckets) {
@@ -114,33 +129,67 @@ public class KmsS3Service {
     }
 
     public boolean addToBucket(String bucketName) throws FileNotFoundException {
-    	s3Client = S3Client.builder()
-				.credentialsProvider(StaticCredentialsProvider.create(kmsSessionCredentials())).region(Region.US_EAST_2)
-				.build();
-    	
-    	File file = ResourceUtils.getFile("classpath:observation.json");
-    	
-    	PutObjectRequest objectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(fileName)
-                .ssekmsKeyId(keyArn)
-                .serverSideEncryption("aws:kms")
-                .build();
-    	
-    	s3Client.putObject(objectRequest, RequestBody.fromFile(file));
-    	return true;
+        File file = ResourceUtils.getFile("classpath:observation.json");
+
+        PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(bucketName).key(fileName).ssekmsKeyId(keyArn)
+                .serverSideEncryption("aws:kms").build();
+
+        s3Client.putObject(objectRequest, RequestBody.fromFile(file));
+        return true;
     }
-    
-    
+
+    public List<String> listBucketObjects(String bucketName) {
+
+        List<String> result = new ArrayList();
+        ListObjectsRequest listObjects = ListObjectsRequest.builder().bucket(bucketName).build();
+
+        ListObjectsResponse res = s3Client.listObjects(listObjects);
+        List<S3Object> objects = res.contents();
+
+        for (ListIterator iterVals = objects.listIterator(); iterVals.hasNext(); ) {
+            S3Object myValue = (S3Object) iterVals.next();
+            StringBuffer resultBuffer = new StringBuffer();
+            resultBuffer.append("\n The name of the key is " + myValue.key());
+            resultBuffer.append("\n The owner is " + myValue.owner());
+            result.add(resultBuffer.toString());
+        }
+        return result;
+    }
+
+    public void getObject(String bucketName) {
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileName)
+                    .build();
+            var getObjectResponse = s3Client.getObject(getObjectRequest);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(getObjectResponse));
+
+            String line;     
+            while ((line = reader.readLine()) != null) {            
+                System.out.println(line);
+            }
+        } catch (AmazonServiceException e) {
+            System.err.println(e.getErrorMessage());
+            System.exit(1);
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
     /**
-	 * Retrieve the STS token stored along with the user's authentication.
-	 */
-	private AwsSessionCredentials kmsSessionCredentials() {
-		Duration duration = Duration.ofSeconds(900);
-		final StsClient stsClient = StsClient.builder().region(Region.US_EAST_2).build();
-		final AssumeRoleRequest roleRequest = AssumeRoleRequest.builder().roleArn(roleArn)
-				.roleSessionName(ROLE_SESSION_NAME).durationSeconds((int) duration.getSeconds()).build();
-		final AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(roleRequest);
+     * Retrieve the STS token stored along with the user's authentication.
+     */
+    private AwsSessionCredentials kmsSessionCredentials() {
+        Duration duration = Duration.ofSeconds(900);
+        final StsClient stsClient = StsClient.builder().region(Region.US_EAST_2).build();
+        final AssumeRoleRequest roleRequest = AssumeRoleRequest.builder().roleArn(roleArn)
+                .roleSessionName(ROLE_SESSION_NAME).durationSeconds((int) duration.getSeconds()).build();
+        final AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(roleRequest);
 //		final AuthenticationIdentityContext identityContext = currentUserIdentity();
 //		if (identityContext == null) {
 //			return null;
@@ -150,7 +199,7 @@ public class KmsS3Service {
 //			return null;
 //		}
 
-		return AwsSessionCredentials.create(assumeRoleResponse.credentials().accessKeyId(),
-				assumeRoleResponse.credentials().secretAccessKey(), assumeRoleResponse.credentials().sessionToken());
-	}
+        return AwsSessionCredentials.create(assumeRoleResponse.credentials().accessKeyId(),
+                assumeRoleResponse.credentials().secretAccessKey(), assumeRoleResponse.credentials().sessionToken());
+    }
 }
